@@ -4,12 +4,14 @@ import xarray as xr
 import numpy as np
 import utils
 import math
+import os
 
 class ChloDataset(Dataset):
     # 模型输入为三天的chlo数据，Nan值被覆盖为0
     # cost function只计算该数据有target的地方
-    def __init__(self, data_dir="data//chlo_data.nc"):
-        with xr.open_dataset(data_dir) as chlo_data:
+    def __init__(self, data_filename="training_chlo.nc"):
+        data_path = os.path.join(os.path.dirname(os.getcwd()), "data", data_filename)
+        with xr.open_dataset(data_path) as chlo_data:
             self.chlo_data = chlo_data
             # 数据为log值的normalized
         self.chlo_anomaly_log = utils.get_normalized(self.chlo_data.CHL1_mean)

@@ -3,6 +3,7 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+import os
 
 
 def get_mask(train_dataset, mode=None, batch=32, channel=8):
@@ -39,7 +40,8 @@ def get_log(x):
     return np.log(x)
 
 
-def show(output, format_dir="data//data_format.nc"):
+def show(output, format_file="data_format.nc"):
+    format_dir = os.path.join(os.path.dirname(os.getcwd()), 'data', format_file)
     with xr.open_dataset(format_dir) as file:
         data_format = file
     output_np = output.detach().cpu().numpy()

@@ -10,10 +10,10 @@ import utils
 batch_size = 32
 
 
-train_dataset = dataset.ChloDataset()
+train_dataset = dataset.ChloDataset("training_chlo.nc")
 train_dataloader = dataloader.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-test_dataset = dataset.ChloDataset()
+test_dataset = dataset.ChloDataset("test_chlo.nc")
 test_dataloader = dataloader.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
 net = model.DINCAEModel()
@@ -23,7 +23,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 net = net.to(device)
 print("device:", device)
 # 开始训练
-for epoch in range(50):  # loop over the dataset multiple times
+for epoch in range(1):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(train_dataloader, 0):
@@ -32,7 +32,7 @@ for epoch in range(50):  # loop over the dataset multiple times
         inputs, missing, labels = data[0], data[1], data[2]
 
         # 给输入施加一个mask,施加在三天的chlo-anomaly上
-        mask = utils.get_mask(train_dataset, batch=batch_size)
+        mask = utils.get_mask(train_dataset, batch=inputs.shape[0])
         inputs_masked = inputs * mask
         missing_masked = missing * mask
 
@@ -59,11 +59,42 @@ for epoch in range(50):  # loop over the dataset multiple times
                   (epoch + 1, i + 1, (running_loss/20)**0.5*train_dataset.std.item()))
             running_loss = 0.0
 
+    # 对测试集进行测试
+    if epoch % 5 == 4:
+        net.eval()
+        test_epoch_loss = 0
+        for data in test_dataloader:
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, missing, labels = data[0], data[1], data[2]
+            # 给输入施加一个mask,施加在三天的chlo-anomaly上
+            mask = utils.get_mask(train_dataset, batch=inputs.shape[0])
+            inputs_masked = inputs * mask
+            missing_masked = missing * mask
+
+            # 将tensor移动到gpu上
+            inputs_masked = inputs_masked.to(device)
+            missing_masked = missing_masked.to(device)
+            labels = labels.to(device)
+            missing = missing.to(device)
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = net(inputs_masked.float())
+            # 损失函数不计算missed
+            loss = criterion(
+                outputs * missing[:, 1:2], labels * missing[:, 1:2]) / missing[:, 1:2].sum() * missing[:, 1:2].numel()
+            test_epoch_loss += loss.item()*test_dataloader.batch_size
+        test_loss = test_epoch_loss/len(test_dataloader.dataset)
+        print('[%d] loss: %.5f' %
+              (epoch + 1, test_loss ** 0.5 * train_dataset.std.item()))
+
 print('Finished Training')
 
-MSE_Loss = (criterion(outputs * missing[:, 1:2], labels * missing[:, 1:2])/missing[:, 1:2].sum()*missing[:, 1:2].numel()).sqrt()*train_dataset.std.item()
+#MSE_Loss = (criterion(outputs * missing[:, 1:2], labels * missing[:, 1:2])/missing[:, 1:2].sum()*missing[:, 1:2].numel()).sqrt()*train_dataset.std.item()
 
-i = 8
+i = 0
 utils.show(inputs[i][1])
 utils.show(inputs_masked[i][1])
 utils.show(outputs[i][0])
