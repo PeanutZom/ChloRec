@@ -68,7 +68,7 @@ utils.show(inputs[i][1])
 utils.show(inputs_masked[i][1])
 utils.show(outputs[i][0])
 utils.show(labels[i][0])
-utils.show(missing[i,1])
+utils.show(missing[i, 1])
 a = (outputs * missing[:, 1:2]-labels * missing[:, 1:2])[i][0]
 utils.show(a)
 percent = a/labels[i][0]

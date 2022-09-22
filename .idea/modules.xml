@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Chlo Reconstruct.iml" filepath="$PROJECT_DIR$/.idea/Chlo Reconstruct.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ChloRec.iml" filepath="$PROJECT_DIR$/.idea/ChloRec.iml" />
     </modules>
   </component>
 </project>
